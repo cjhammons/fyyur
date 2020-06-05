@@ -181,6 +181,7 @@ def create_venue_submission():
       state=request.form['state'],
       phone=request.form['phone'],
       facebook_link=request.form['facebook_link'],
+      address=request.form['address'],
       seeking_talent=True,
       seeking_description=''
     )
@@ -213,11 +214,58 @@ def delete_venue(venue_id):
     db.session.commit()
   except:
     db.session.rollback()
-    error = False
+    success = False
   
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return jsonify({'success': error})
+  return jsonify({'success': success})
+
+@app.route('/venues/<int:venue_id>/edit', methods=['GET'])
+def edit_venue(venue_id):
+  venue = Venue.query.get(venue_id)
+  form = VenueForm()
+  
+  form.name.data = venue.name
+  form.city.data = venue.city
+  form.state.data = venue.state
+  form.phone.data = venue.phone
+  form.genres.data = venue.genres
+  form.facebook_link.data = venue.facebook_link
+  form.address.data = venue.address
+  # TODO: populate form with values from venue with ID <venue_id>
+  return render_template('forms/edit_venue.html', form=form, venue=venue)
+
+@app.route('/venues/<int:venue_id>/edit', methods=['POST'])
+def edit_venue_submission(venue_id):
+  # TODO: take values from the form submitted, and update existing
+  # venue record with ID <venue_id> using the new attributes
+  error = False
+  try:
+    venue = Venue.query.get(venue_id)
+    print(venue)
+    venue.name=request.form['name'],
+    venue.genres=request.form['genres'],
+    venue.city=request.form['city'],
+    venue.state=request.form['state'],
+    venue.phone=request.form['phone'],
+    venue.address=request.form['address']
+    #image_link=request.form['image_link'],
+    venue.facebook_link=request.form['facebook_link']
+    db.session.commit()
+  except:
+    error = True
+    print(sys.exc_info())
+    db.session.rollback()
+
+  if error:
+    abort (400)
+    flash('An error occured')
+  else:
+    # on successful db insert, flash success
+    flash('Venue ' + venue.name + ' was successfully edited!')
+
+  return redirect(url_for('show_venue', venue_id=venue_id))
+
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -339,35 +387,10 @@ def edit_artist_submission(artist_id):
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
-#  Update
+#  Venues
 #  ----------------------------------------------------------------
 
 
-@app.route('/venues/<int:venue_id>/edit', methods=['GET'])
-def edit_venue(venue_id):
-  form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
-  # TODO: populate form with values from venue with ID <venue_id>
-  return render_template('forms/edit_venue.html', form=form, venue=venue)
-
-@app.route('/venues/<int:venue_id>/edit', methods=['POST'])
-def edit_venue_submission(venue_id):
-  # TODO: take values from the form submitted, and update existing
-  # venue record with ID <venue_id> using the new attributes
-  return redirect(url_for('show_venue', venue_id=venue_id))
 
 
 
