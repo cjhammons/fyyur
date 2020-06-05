@@ -48,7 +48,7 @@ class Venue(db.Model):
   phone = db.Column(db.String(120))
   website = db.Column(db.String(120))
   seeking_talent = db.Column(db.Boolean, nullable = False)
-  seekint_description = db.Column(db.String(), nullable = False)
+  seeking_description = db.Column(db.String(), nullable = False)
   image_link = db.Column(db.String(500))
   facebook_link = db.Column(db.String(120))
 
@@ -241,9 +241,6 @@ def show_venue(venue_id):
   data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
   return render_template('pages/show_venue.html', venue=data)
 
-#  Create Venue
-#  ----------------------------------------------------------------
-
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
   form = VenueForm()
@@ -253,9 +250,32 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  error = False
+  try:
+    venue = Venue(
+      name=request.form['name'],
+      genres=request.form['genres'],
+      city=request.form['city'],
+      state=request.form['state'],
+      phone=request.form['phone'],
+      facebook_link=request.form['facebook_link'],
+      seeking_talent=True,
+      seeking_description=''
+    )
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    db.session.add(venue)
+    db.session.commit()
+  except:
+    error = True
+    print(sys.exc_info())
+    db.session.rollback()
+
+  if error:
+    abort(400)
+    flash('An error occured')
+  else: 
+    # on successful db insert, flash success
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
@@ -318,7 +338,6 @@ def create_artist_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
   error = False
-  print(request.form)
   try:
     artist = Artist(
       name=request.form['name'],
@@ -390,17 +409,6 @@ def edit_artist_submission(artist_id):
     flash('Artist ' + artist.name + ' was successfully edited!')
 
   return redirect(url_for('show_artist', artist_id=artist_id))
-
-def artistFromForm(form, id):
-  return Artist(
-      name=request.form['name'],
-      genres=request.form['genres'],
-      city=request.form['city'],
-      state=request.form['state'],
-      phone=request.form['phone'],
-      #image_link=request.form['image_link'],
-      facebook_link=request.form['facebook_link']
-    )
 
 #  Update
 #  ----------------------------------------------------------------
