@@ -282,7 +282,7 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
-  response={
+  dummy_response={
     "count": 1,
     "data": [{
       "id": 4,
@@ -290,7 +290,14 @@ def search_artists():
       "num_upcoming_shows": 0,
     }]
   }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+
+  search_term = request.form.get('search_term', '')
+  result = db.session.query(Artist).filter(Artist.name == search_term)
+  
+  for artist in result:
+    print(artist.name)
+        
+  return render_template('pages/search_artists.html', results=result, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
@@ -299,8 +306,6 @@ def show_artist(artist_id):
   
   return render_template('pages/show_artist.html', artist=Artist.query.get(artist_id))
 
-#  Create Artist
-#  ----------------------------------------------------------------
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
@@ -315,16 +320,15 @@ def create_artist_submission():
   error = False
   print(request.form)
   try:
-    #artist = Artist(
-     # name=request.form['name'],
-      #genres=request.form['genres'],
-      #city=request.form['city'],
-      #state=request.form['state'],
-      #phone=request.form['phone'],
+    artist = Artist(
+      name=request.form['name'],
+      genres=request.form['genres'],
+      city=request.form['city'],
+      state=request.form['state'],
+      phone=request.form['phone'],
       #image_link=request.form['image_link'],
-      #facebook_link=request.form['facebook_link']
-    #)
-    artist = artistFromForm(request.form)
+      facebook_link=request.form['facebook_link']
+    )
     db.session.add(artist)
     db.session.commit()
   except:
@@ -346,17 +350,32 @@ def create_artist_submission():
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
+  artist = Artist.query.get(artist_id)
   form = ArtistForm()
-  # TODO: populate form with fields from artist with ID <artist_id>
-  return render_template('forms/edit_artist.html', form=form, artist=Artist.query.get(artist_id))
+
+  form.name.data = artist.name
+  form.city.data = artist.city
+  form.state.data = artist.state
+  form.phone.data = artist.phone
+  form.genres.data = artist.genres
+  form.facebook_link.data = artist.facebook_link
+  return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
   # TODO: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
+  error = False
   try:
-    artist = artistFromForm(request.form)
-    db.session.add(artist)
+    artist = Artist.query.get(artist_id)
+
+    artist.name=request.form['name'],
+    artist.genres=request.form['genres'],
+    artist.city=request.form['city'],
+    artist.state=request.form['state'],
+    artist.phone=request.form['phone'],
+    #image_link=request.form['image_link'],
+    artist.facebook_link=request.form['facebook_link']
     db.session.commit()
   except:
     error = True
@@ -372,7 +391,7 @@ def edit_artist_submission(artist_id):
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
-def artistFromForm(form):
+def artistFromForm(form, id):
   return Artist(
       name=request.form['name'],
       genres=request.form['genres'],
