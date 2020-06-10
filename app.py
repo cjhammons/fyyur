@@ -51,6 +51,8 @@ class Venue(db.Model):
   seeking_description = db.Column(db.String(), nullable = False)
   image_link = db.Column(db.String(500))
   facebook_link = db.Column(db.String(120))
+  past_shows_count = db.Column(db.Integer)
+  upcoming_shows_count = db.Column(db.Integer)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -84,8 +86,7 @@ class Show(db.Model):
       id = db.Column(db.Integer, primary_key=True)
       artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'), nullable=False)
       venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
-      venue_name = db.Column(db.String)
-      date = db.Column(db.String, nullable=False)
+      start_time = db.Column(db.String, nullable=False)
 
 
 
@@ -119,7 +120,40 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
+
+  
+  venues = Venue.query.order_by(Venue.city)
+
+  data=[]
+  cities = []
+  for venue in venues:
+    city = venue.city
+
+    if (city not in cities):
+      cities.append(city)
+      data.append({
+        "city": city,
+        "state": venue.state,
+        "venues": [{
+          "id": venue.id,
+          "name": venue.name,
+          "upcoming_shows_count": venue.upcoming_shows_count
+        }]
+      })
+      print('Added ' + venue.name + ' to ' + city)
+    else:
+      print(next(filter(lambda venue_city: venue_city['city'] == city, data)))
+      next(filter(lambda venue_city: venue_city['city'] == city, data))['venues'].append({
+        "id": venue.id,
+        "name": venue.name,
+        "upcoming_shows_count": venue.upcoming_shows_count
+      })
+      print('Added ' + venue.name + ' to ' + city)
+
+      
+        
+
+  dummy_data=[{
     "city": "San Francisco",
     "state": "CA",
     "venues": [{
@@ -387,13 +421,6 @@ def edit_artist_submission(artist_id):
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
-#  Venues
-#  ----------------------------------------------------------------
-
-
-
-
-
 
 #  Shows
 #  ----------------------------------------------------------------
@@ -452,8 +479,26 @@ def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
 
+  error = False
+  try:
+    show = Show(
+      artist_id=request.form['artist_id'],
+      venue_id=request.form['venue_id'],
+      start_time=request.form['start_time']
+    )
+    db.session.add(show)
+    db.session.commit()
+  except:
+    error = True
+    print(sys.exc_info())
+    db.session.rollback()
+
+  if error:
+    abort (400)
+    flash('An error occured')
+  else:
+    flash('Show was successfully listed')
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
