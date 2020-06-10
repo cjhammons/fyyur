@@ -51,8 +51,8 @@ class Venue(db.Model):
   seeking_description = db.Column(db.String(), nullable = False)
   image_link = db.Column(db.String(500))
   facebook_link = db.Column(db.String(120))
-  past_shows_count = db.Column(db.Integer)
-  upcoming_shows_count = db.Column(db.Integer)
+  past_shows_count = db.Column(db.Integer, nullable=False)
+  upcoming_shows_count = db.Column(db.Integer, nullable=False)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -72,8 +72,8 @@ class Artist(db.Model):
 
   shows = db.relationship('Show', backref='list', lazy=True)
   
-  past_shows_count = db.Column(db.Integer)
-  upcoming_shows_count = db.Column(db.Integer)
+  past_shows_count = db.Column(db.Integer, nullable=False)
+  upcoming_shows_count = db.Column(db.Integer, nullable=False)
   website = db.Column(db.String())
   facebook_link = db.Column(db.String(120))
 
@@ -142,15 +142,12 @@ def venues():
       })
       print('Added ' + venue.name + ' to ' + city)
     else:
-      print(next(filter(lambda venue_city: venue_city['city'] == city, data)))
       next(filter(lambda venue_city: venue_city['city'] == city, data))['venues'].append({
         "id": venue.id,
         "name": venue.name,
         "upcoming_shows_count": venue.upcoming_shows_count
       })
-      print('Added ' + venue.name + ' to ' + city)
-
-      
+      print('Added ' + venue.name + ' to ' + city)  
         
 
   dummy_data=[{
@@ -217,7 +214,9 @@ def create_venue_submission():
       facebook_link=request.form['facebook_link'],
       address=request.form['address'],
       seeking_talent=True,
-      seeking_description=''
+      seeking_description='',
+      upcoming_shows_count=0,
+      past_shows_count=0
     )
 
     db.session.add(venue)
@@ -357,7 +356,9 @@ def create_artist_submission():
       state=request.form['state'],
       phone=request.form['phone'],
       #image_link=request.form['image_link'],
-      facebook_link=request.form['facebook_link']
+      facebook_link=request.form['facebook_link'],
+      upcoming_shows_count=0,
+      past_shows_count=0
     )
     db.session.add(artist)
     db.session.commit()
@@ -430,6 +431,9 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
+
+
+
   data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
@@ -487,6 +491,10 @@ def create_show_submission():
       start_time=request.form['start_time']
     )
     db.session.add(show)
+    
+    Venue.query.get(show.venue_id).upcoming_shows_count += 1
+    Artist.query.get(show.artist_id).upcoming_shows_count += 1
+
     db.session.commit()
   except:
     error = True
