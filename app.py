@@ -432,9 +432,22 @@ def shows():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
 
+  shows = Show.query.all()
 
+  data=[]
+  for show in shows:
+    venue = Venue.query.get(show.venue_id)
+    artist = Artist.query.get(show.artist_id)
+    data.append({
+      "venue_id": venue.id,
+      "venue_name": venue.name,
+      "artist_id": artist.id,
+      "artist_name": artist.name,
+      "artist_image_link": artist.image_link,
+      "start_time": show.start_time
+    })
 
-  data=[{
+  dummy_data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
     "artist_id": 4,
