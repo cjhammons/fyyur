@@ -24,7 +24,7 @@ moment = Moment(app)
 
 app.config.from_object('config')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://curtis:$ecureP@$$wordL0L@localhost:5432/fyyur'
+app.config['SQLALCHEMY_DATABASE_URI'] = '<database_uri>
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
