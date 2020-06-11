@@ -322,12 +322,25 @@ def search_artists():
   }
 
   search_term = request.form.get('search_term', '')
-  result = db.session.query(Artist).filter(Artist.name == search_term)
+  artists = Artist.query.filter(Artist.name.ilike('%'+search_term+'%')).all()
   
-  for artist in result:
+  data = []
+  for artist in artists:
     print(artist.name)
+    data.append({
+      "id": artist.id,
+      "name": artist.name,
+      "num_upcoming_shows": artist.upcoming_shows_count
+    })
+
+  response = {
+    "count": len(data),
+    "data": data
+  }
+
+
         
-  return render_template('pages/search_artists.html', results=result, search_term=request.form.get('search_term', ''))
+  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
