@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 
 start.sh
+dburi.txt
 
 # C extensions
 *.so

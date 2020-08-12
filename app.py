@@ -13,6 +13,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 import sys
+from models import Artist, Venue, Show
 
 from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
@@ -21,67 +22,13 @@ from flask_migrate import Migrate
 
 app = Flask(__name__)
 moment = Moment(app)
-
 app.config.from_object('config')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = '<database_uri>
-
 db = SQLAlchemy(app)
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://coolguy:meme@localhost:5432/fyyur'
+
+#db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-
-
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Venue(db.Model):
-  __tablename__ = 'venues'
-
-  id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String)
-  genres = db.Column(db.ARRAY(db.String))
-  city = db.Column(db.String(120))
-  state = db.Column(db.String(120))
-  address = db.Column(db.String(120))
-  phone = db.Column(db.String(120))
-  website = db.Column(db.String(120))
-  seeking_talent = db.Column(db.Boolean, nullable = False)
-  seeking_description = db.Column(db.String(), nullable = False)
-  image_link = db.Column(db.String(500))
-  facebook_link = db.Column(db.String(120))
-  past_shows_count = db.Column(db.Integer, nullable=False)
-  upcoming_shows_count = db.Column(db.Integer, nullable=False)
-
-class Artist(db.Model):
-  __tablename__ = 'artists'
-
-  id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String)
-  genres = db.Column(db.ARRAY(db.String))
-  city = db.Column(db.String(120))
-  state = db.Column(db.String(120))
-  phone = db.Column(db.String(120))
-  image_link = db.Column(db.String(500))
-
-  seeking_venue = db.Column(db.Boolean, nullable = False, default=False)
-  seeking_description = db.Column(db.String)
-
-  shows = db.relationship('Show', backref='list', lazy=True)
-  
-  past_shows_count = db.Column(db.Integer, nullable=False)
-  upcoming_shows_count = db.Column(db.Integer, nullable=False)
-  website = db.Column(db.String())
-  facebook_link = db.Column(db.String(120))
-
-class Show(db.Model):
-      __tablename__ = "shows"
-
-      id = db.Column(db.Integer, primary_key=True)
-      artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'), nullable=False)
-      venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
-      start_time = db.Column(db.String, nullable=False)
-
 
 
 #----------------------------------------------------------------------------#
@@ -174,23 +121,24 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   error = False
+
+  form = VenueForm()
   try:
     venue = Venue(
-      name=request.form['name'],
-      genres=request.form['genres'],
-      city=request.form['city'],
-      state=request.form['state'],
-      phone=request.form['phone'],
-      facebook_link=request.form['facebook_link'],
-      address=request.form['address'],
+      name=form.name.data,
+      genres=form.genres.data,
+      city=form.city.data,
+      state=form.state.data,
+      phone=form.phone.data,
+      facebook_link=form.facebook_link.data,
+      address=form.address.data,
       seeking_talent=True,
       seeking_description='',
       upcoming_shows_count=0,
       past_shows_count=0
     )
 
-    db.session.add(venue)
-    db.session.commit()
+    venue.insert()
   except:
     error = True
     print(sys.exc_info())
@@ -201,17 +149,16 @@ def create_venue_submission():
     flash('An error occured')
   else: 
     # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    flash('Venue ' + form.name.data + ' was successfully listed!')
   return render_template('pages/home.html')
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+@app.route('/venues/<venue_id>', methods=[' '])
 def delete_venue(venue_id):
   success = True
   try:
-    Venue.query.filter_by(id=venue_id).delete()
-    db.session.commit()
+    venue = Venue.query.filter_by(id=venue_id)
+    venue.delete()
   except:
-    db.session.rollback()
     success = False
   
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
@@ -236,17 +183,18 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
   error = False
   try:
+    form = VenueForm()
+
     venue = Venue.query.get(venue_id)
-    print(venue)
-    venue.name=request.form['name'],
-    venue.genres=request.form['genres'],
-    venue.city=request.form['city'],
-    venue.state=request.form['state'],
-    venue.phone=request.form['phone'],
-    venue.address=request.form['address']
+    venue.name=form.name.data,
+    venue.genres=form.genres.data,
+    venue.city=form.city.data,
+    venue.state=form.state.data,
+    venue.phone=form.phone.data,
+    venue.address=form.address.data,
     #image_link=request.form['image_link'],
-    venue.facebook_link=request.form['facebook_link']
-    db.session.commit()
+    venue.facebook_link=form.facebook_link.data,
+    venue.update()
   except:
     error = True
     print(sys.exc_info())
@@ -307,20 +255,22 @@ def create_artist_form():
 def create_artist_submission():
   # called upon submitting the new artist listing form
   error = False
+
+  form = ArtistForm()
+
   try:
     artist = Artist(
-      name=request.form['name'],
-      genres=request.form['genres'],
-      city=request.form['city'],
-      state=request.form['state'],
-      phone=request.form['phone'],
+      name=form.name.data,
+      genres=form.genres.data,
+      city=form.city.data,
+      state=form.state.data,
+      phone=form.phone.data,
       #image_link=request.form['image_link'],
-      facebook_link=request.form['facebook_link'],
+      facebook_link=form.facebook_link.data,
       upcoming_shows_count=0,
       past_shows_count=0
     )
-    db.session.add(artist)
-    db.session.commit()
+    artist.insert()
   except:
     error = True
     print(sys.exc_info())
@@ -355,17 +305,20 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
   # artist record with ID <artist_id> using the new attributes
   error = False
+  
+
   try:
     artist = Artist.query.get(artist_id)
+    form = ArtistForm()
 
-    artist.name=request.form['name'],
-    artist.genres=request.form['genres'],
-    artist.city=request.form['city'],
-    artist.state=request.form['state'],
-    artist.phone=request.form['phone'],
+    artist.name=form.name.data,
+    artist.genres=form.genres.data,
+    artist.city=form.name.data,
+    artist.state=form.name.data,
+    artist.phone=form.name.data,
     #image_link=request.form['image_link'],
-    artist.facebook_link=request.form['facebook_link']
-    db.session.commit()
+    artist.facebook_link=form.name.data,
+    artist.update()
   except:
     error = True
     print(sys.exc_info())
@@ -417,17 +370,22 @@ def create_show_submission():
 
   error = False
   try:
+    form = ShowForm()
     show = Show(
-      artist_id=request.form['artist_id'],
-      venue_id=request.form['venue_id'],
-      start_time=request.form['start_time']
+      artist_id=form.artist_id.data,
+      venue_id=form.venue_id.data,
+      start_time=form.start_time.data
     )
-    db.session.add(show)
-    
-    Venue.query.get(show.venue_id).upcoming_shows_count += 1
-    Artist.query.get(show.artist_id).upcoming_shows_count += 1
+    show.insert()
 
-    db.session.commit()
+    #venue =  Venue.query.get(show.venue_id)
+    #venue.upcoming_shows_count += 1
+    #venue.update()
+
+    #artist = Artist.query.get(show.artist_id)
+    #artist.upcoming_shows_count += 1
+    #artist.update()
+
   except:
     error = True
     print(sys.exc_info())
