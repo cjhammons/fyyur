@@ -78,7 +78,7 @@ A Show object. Shows are held at a ``Venue`` and are performed by an ``Artist``.
 -``update()``: Updates the artist object into the SQL database.
 
 ## Endpoints
-The endpoints are interconnected with the frontend. All of the ``POST`` endpoints use a ``Form`` object to get the parameters they need.
+The endpoints are interconnected with the frontend. All of the ``POST`` endpoints use a ``Form`` object to get the parameters they need. The endpoints can be found in ``api.py``
 
 Venues: 
 - ``GET /venues``: Gets all the venues
